@@ -151,7 +151,7 @@ func formatObject(dec *json.Decoder, buf *strings.Builder, indent int, inArray, 
 					buf.WriteString("\n")
 				}
 			}
-		case json.Number:
+		default: // These are always value types.
 			if valueNeedsNewline {
 				buf.WriteString("\n")
 				valueNeedsNewline = false
@@ -159,37 +159,14 @@ func formatObject(dec *json.Decoder, buf *strings.Builder, indent int, inArray, 
 			if inArray {
 				writeIndent(buf, indent+1)
 			}
-			fmt.Fprintf(buf, "%s", tok.String())
-			if dec.More() {
-				buf.WriteString(",\n")
-			} else {
-				buf.WriteString("\n")
+			switch tok := t.(type) {
+			case json.Number:
+				fmt.Fprintf(buf, "%s", tok.String())
+			case bool:
+				fmt.Fprintf(buf, "%t", tok)
+			case nil:
+				buf.WriteString("null")
 			}
-			nextTokenIsValue = false
-		case bool:
-			if valueNeedsNewline {
-				buf.WriteString("\n")
-				valueNeedsNewline = false
-			}
-			if inArray {
-				writeIndent(buf, indent+1)
-			}
-			fmt.Fprintf(buf, "%t", tok)
-			if dec.More() {
-				buf.WriteString(",\n")
-			} else {
-				buf.WriteString("\n")
-			}
-			nextTokenIsValue = false
-		case nil:
-			if valueNeedsNewline {
-				buf.WriteString("\n")
-				valueNeedsNewline = false
-			}
-			if inArray {
-				writeIndent(buf, indent+1)
-			}
-			buf.WriteString("null")
 			if dec.More() {
 				buf.WriteString(",\n")
 			} else {
