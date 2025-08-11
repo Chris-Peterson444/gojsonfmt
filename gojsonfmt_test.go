@@ -245,7 +245,7 @@ func TestFormatJSON(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 		if generated != test.expected {
-			t.Fatalf("expected:\n %q\nbut got:\n%q\n", test.expected, generated)
+			t.Fatalf("expected:\n %s\nbut got:\n%s\n", test.expected, generated)
 		}
 	}
 }
