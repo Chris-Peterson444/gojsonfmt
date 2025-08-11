@@ -168,7 +168,7 @@ func TestFormatJSON(t *testing.T) {
 	}]]
 }`,
 	}, {
-		summary: "edge cases",
+		summary: "empty list and object edge cases",
 		input: `{
 			  "list-of-single-empty-list": [
 			    []
@@ -191,6 +191,50 @@ func TestFormatJSON(t *testing.T) {
 	"list-of-multiple-empty-lists": [[], [], []],
 	"list-of-empty-object": [{}],
 	"list-of-multiple-empty-object": [{}, {}]
+}`,
+	}, {
+		summary: "lists and objects of various completeness and nesting",
+		input: `{
+  "foo": [
+    {
+      "foo": 1
+    },
+    {},
+    [
+      {
+        "foo": 1
+      }
+    ],
+    [],
+    [
+      {
+        "foo": [
+          {
+            "bar": 1,
+	    "baz": [1,2,3]
+          }
+        ]
+      }
+    ],
+    [],
+    {}
+  ]
+}`,
+		expected: `{
+	"foo": [{
+		"foo": 1
+	}, {}, [{
+		"foo": 1
+	}], [], [{
+		"foo": [{
+			"bar": 1,
+			"baz": [
+				1,
+				2,
+				3
+			]
+		}]
+	}], [], {}]
 }`,
 	}}
 

@@ -100,11 +100,12 @@ func formatObject(dec *json.Decoder, buf *strings.Builder, indent int, inArray, 
 				if err := formatObject(dec, buf, indent, true, false); err != nil {
 					return err
 				}
+				s := buf.String()
+				lastChar := s[len(s)-1]
+				if lastChar != '}' && lastChar != ']' {
+					writeIndent(buf, indent)
+				}
 				if inArray {
-					s := buf.String()
-					if s[len(s)-1] != '}' {
-						writeIndent(buf, indent)
-					}
 					if dec.More() {
 						buf.WriteString("], ")
 					} else {
