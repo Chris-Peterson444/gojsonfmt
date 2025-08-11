@@ -236,6 +236,26 @@ func TestFormatJSON(t *testing.T) {
 		}]
 	}], [], {}]
 }`,
+	}, {
+		summary: "examples",
+		input: `{
+		  "foo": {},
+		  "bar": [
+			[
+			  {}
+			]
+			],
+		  "baz": {
+		    "qux": {}
+		  }
+		}`,
+		expected: `{
+	"foo": {},
+	"bar": [[{}]],
+	"baz": {
+		"qux": {}
+	}
+}`,
 	}}
 
 	for _, test := range tests {

@@ -89,10 +89,17 @@ func formatObject(dec *json.Decoder, buf *strings.Builder, indent int, inArray, 
 						return fmt.Errorf("expected '] but got %q", tok)
 					}
 					buf.WriteString("]")
-					if dec.More() {
-						buf.WriteString(", ")
-					} else if !inArray {
-						buf.WriteString("\n")
+					if inArray {
+						if dec.More() {
+							buf.WriteString(", ")
+						}
+						// If not more, don't write.
+					} else if inObject {
+						if dec.More() {
+							buf.WriteString(",\n")
+						} else {
+							buf.WriteString("\n")
+						}
 					}
 					continue
 				}
