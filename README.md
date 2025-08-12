@@ -4,16 +4,27 @@ This package provides a way to format JSON into in a Go-like way. Opening and
 closing braces will be compacted where possible, and indentation always uses
 tabs.
 
-## Installation
+## Usage
+
+### As a Package
+
+```bash
+go get github.com/chris-peterson444/gojsonfmt
+```
+
+### Install the binary
 
 ```bash
 go install github.com/chris-peterson444/gojsonfmt/cmd/gojsonfmt@latest
 ```
 
-## Usage
-
 ```bash
-go get github.com/chris-peterson444/gojsonfmt
+$ gojsonfmt --help
+Usage of gojsonfmt:
+  -file string
+        Path to JSON data to format
+  -stdin
+        Read raw JSON from stdin and format it
 ```
 
 ## Examples
