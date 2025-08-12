@@ -5,33 +5,35 @@
 package gojsonfmt_test
 
 import (
+	"bufio"
+	"io"
+	"strings"
 	"testing"
 
 	"github.com/chris-peterson444/gojsonfmt"
 )
 
-func TestFormatJSON(t *testing.T) {
-	tests := []struct {
-		summary  string
-		input    string
-		expected string
-	}{{
-		summary: "Compact JSON object",
-		input:   `{"foo": [{"bar": 1}, {"bar": 2}]}`,
-		expected: `{
+var conversionTests = []struct {
+	summary  string
+	input    string
+	expected string
+}{{
+	summary: "Compact JSON object",
+	input:   `{"foo": [{"bar": 1}, {"bar": 2}]}`,
+	expected: `{
 	"foo": [{
 		"bar": 1
 	}, {
 		"bar": 2
 	}]
 }`,
-	}, {
-		summary:  "empty is empty",
-		input:    "",
-		expected: "",
-	}, {
-		summary: "Long example formatted with jq",
-		input: `{
+}, {
+	summary:  "empty is empty",
+	input:    "",
+	expected: "",
+}, {
+	summary: "Long example formatted with jq",
+	input: `{
   "single-attr": {
     "one-attr-obj": {
       "thing": "thing"
@@ -112,7 +114,7 @@ func TestFormatJSON(t *testing.T) {
   ]
 }
 `,
-		expected: `{
+	expected: `{
 	"single-attr": {
 		"one-attr-obj": {
 			"thing": "thing"
@@ -171,9 +173,9 @@ func TestFormatJSON(t *testing.T) {
 		"some-empty-obj": {}
 	}]]
 }`,
-	}, {
-		summary: "empty list and object edge cases",
-		input: `{
+}, {
+	summary: "empty list and object edge cases",
+	input: `{
 			  "list-of-single-empty-list": [
 			    []
 			  ],
@@ -190,15 +192,15 @@ func TestFormatJSON(t *testing.T) {
 			    {}
 			  ]
 }`,
-		expected: `{
+	expected: `{
 	"list-of-single-empty-list": [[]],
 	"list-of-multiple-empty-lists": [[], [], []],
 	"list-of-empty-object": [{}],
 	"list-of-multiple-empty-object": [{}, {}]
 }`,
-	}, {
-		summary: "lists and objects of various completeness and nesting",
-		input: `{
+}, {
+	summary: "lists and objects of various completeness and nesting",
+	input: `{
   "foo": [
     {
       "foo": 1
@@ -224,7 +226,7 @@ func TestFormatJSON(t *testing.T) {
     {}
   ]
 }`,
-		expected: `{
+	expected: `{
 	"foo": [{
 		"foo": 1
 	}, {}, [{
@@ -240,9 +242,9 @@ func TestFormatJSON(t *testing.T) {
 		}]
 	}], [], {}]
 }`,
-	}, {
-		summary: "list of lists example",
-		input: `{
+}, {
+	summary: "list of lists example",
+	input: `{
   "foo": [
     [
       1,
@@ -259,7 +261,7 @@ func TestFormatJSON(t *testing.T) {
     ]
   ]
 }`,
-		expected: `{
+	expected: `{
 	"foo": [[
 		1,
 		2,
@@ -270,9 +272,9 @@ func TestFormatJSON(t *testing.T) {
 		"bar": 2
 	}]]
 }`,
-	}, {
-		summary: "empty obj examples",
-		input: `{
+}, {
+	summary: "empty obj examples",
+	input: `{
 		  "foo": {},
 		  "bar": [
 			[
@@ -283,23 +285,58 @@ func TestFormatJSON(t *testing.T) {
 		    "qux": {}
 		  }
 		}`,
-		expected: `{
+	expected: `{
 	"foo": {},
 	"bar": [[{}]],
 	"baz": {
 		"qux": {}
 	}
 }`,
-	}}
+}}
 
-	for _, test := range tests {
-		t.Logf("summary: %s", test.summary)
-		generated, err := gojsonfmt.FormatJSONString(test.input)
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if generated != test.expected {
-			t.Fatalf("expected:\n %s\nbut got:\n%s\n", test.expected, generated)
-		}
+func TestFormatJSONString(t *testing.T) {
+	for _, test := range conversionTests {
+		t.Run(test.summary, func(t *testing.T) {
+			generated, err := gojsonfmt.FormatJSONString(test.input)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if generated != test.expected {
+				t.Fatalf("expected:\n %s\nbut got:\n%s\n", test.expected, generated)
+			}
+		})
+	}
+}
+
+func TestFormatJSONBytes(t *testing.T) {
+	for _, test := range conversionTests {
+		t.Run(test.summary, func(t *testing.T) {
+			generated, err := gojsonfmt.FormatJSONBytes([]byte(test.input))
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if string(generated) != test.expected {
+				t.Fatalf("expected:\n %s\nbut got:\n%s\n", test.expected, generated)
+			}
+		})
+	}
+}
+
+func TestFormatJSONReader(t *testing.T) {
+	for _, test := range conversionTests {
+		t.Run(test.summary, func(t *testing.T) {
+			testInputReader := bufio.NewReader(strings.NewReader(test.input))
+			reader, err := gojsonfmt.FormatJSONReader(testInputReader)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			generated, err := io.ReadAll(reader)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if string(generated) != test.expected {
+				t.Fatalf("expected:\n %s\nbut got:\n%s\n", test.expected, generated)
+			}
+		})
 	}
 }

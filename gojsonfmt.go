@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// package gojsonfmt implements functions for formatting JSON data similar to
+// Go source code.
 package gojsonfmt
 
 import (
@@ -12,26 +14,47 @@ import (
 	"strings"
 )
 
+// FormatJSONString formats a JSON string with Go source code like formatting.
 func FormatJSONString(data string) (string, error) {
-	dataAsBytes, err := io.ReadAll(strings.NewReader(data))
+	output, err := FormatJSONReader(strings.NewReader(data))
+	if err != nil {
+		return "", nil
+	}
+	formatted, err := io.ReadAll(output)
 	if err != nil {
 		return "", err
 	}
-	return FormatJSONStream(dataAsBytes)
+	return string(formatted), nil
 }
 
-func FormatJSONStream(data []byte) (string, error) {
-	dec := json.NewDecoder(bytes.NewReader(data))
+// FormatJSONBytes decodes the byte array as a JSON string and formats it with
+// Go source code like formatting.
+func FormatJSONBytes(data []byte) ([]byte, error) {
+	output, err := FormatJSONReader(bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+	formatted, err := io.ReadAll(output)
+	if err != nil {
+		return nil, err
+	}
+	return formatted, nil
+}
+
+// FormatJSONReader reads JSON data from the reader and formats it with Go
+// source code like formatting.
+func FormatJSONReader(r io.Reader) (*strings.Reader, error) {
+	dec := json.NewDecoder(r)
 	dec.UseNumber()
 
 	var buf strings.Builder
 	err := formatObject(dec, &buf, 0, false, false)
 	if err != nil && err != io.EOF {
-		return "", err
+		return nil, err
 	}
 	output := buf.String()
 	output = strings.TrimSpace(output)
-	return output, nil
+	return strings.NewReader(output), nil
 }
 
 func formatObject(dec *json.Decoder, buf *strings.Builder, indent int, inArray, inObject bool) error {

@@ -48,10 +48,10 @@ func main() {
 }
 
 func formatJSON(data []byte) {
-	formatted, err := gojsonfmt.FormatJSONStream(data)
+	formatted, err := gojsonfmt.FormatJSONBytes(data)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to format JSON: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Print(formatted)
+	fmt.Print(string(formatted))
 }
