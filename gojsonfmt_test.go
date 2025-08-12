@@ -237,7 +237,37 @@ func TestFormatJSON(t *testing.T) {
 	}], [], {}]
 }`,
 	}, {
-		summary: "examples",
+		summary: "list of lists example",
+		input: `{
+  "foo": [
+    [
+      1,
+      2,
+      3
+    ],
+    [
+      {
+        "bar": 1
+      },
+      {
+        "bar": 2
+      }
+    ]
+  ]
+}`,
+		expected: `{
+	"foo": [[
+		1,
+		2,
+		3
+	], [{
+		"bar": 1
+	}, {
+		"bar": 2
+	}]]
+}`,
+	}, {
+		summary: "empty obj examples",
 		input: `{
 		  "foo": {},
 		  "bar": [

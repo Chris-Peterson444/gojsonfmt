@@ -40,6 +40,46 @@ will be formatted into:
 }
 ```
 
+### Lists of Lists
+
+Lists of lists, and lists of alternating types are handled as well:
+
+```json
+{
+  "foo": [
+    [
+      1,
+      2,
+      3
+    ],
+    [
+      {
+        "bar": 1
+      },
+      {
+        "bar": 2
+      }
+    ]
+  ]
+}
+```
+
+formatted:
+
+```json
+{
+	"foo": [[
+		1,
+		2,
+		3
+	], [{
+		"bar": 1
+	}, {
+		"bar": 2
+	}]]
+}
+```
+
 ### Empty Objects and Lists
 
 Objects with no attributes and empty lists will be formatted in-line. Lists
@@ -72,3 +112,5 @@ Formatted:
 	}
 }
 ```
+
+### 
