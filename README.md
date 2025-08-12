@@ -1,5 +1,7 @@
 # gojsonfmt
 
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/chris-peterson444/gojsonfmt)](https://pkg.go.dev/github.com/chris-peterson444/gojsonfmt)
+
 This package provides a way to format JSON into in a Go-like way. Opening and
 closing braces will be compacted where possible, and indentation always uses
 tabs.
