@@ -5,9 +5,6 @@
 package gojsonfmt_test
 
 import (
-	"bufio"
-	"io"
-	"strings"
 	"testing"
 
 	"github.com/chris-peterson444/gojsonfmt"
@@ -312,25 +309,6 @@ func TestFormatJSONBytes(t *testing.T) {
 	for _, test := range conversionTests {
 		t.Run(test.summary, func(t *testing.T) {
 			generated, err := gojsonfmt.FormatJSONBytes([]byte(test.input))
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-			if string(generated) != test.expected {
-				t.Fatalf("expected:\n %s\nbut got:\n%s\n", test.expected, generated)
-			}
-		})
-	}
-}
-
-func TestFormatJSONReader(t *testing.T) {
-	for _, test := range conversionTests {
-		t.Run(test.summary, func(t *testing.T) {
-			testInputReader := bufio.NewReader(strings.NewReader(test.input))
-			reader, err := gojsonfmt.FormatJSONReader(testInputReader)
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-			generated, err := io.ReadAll(reader)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}

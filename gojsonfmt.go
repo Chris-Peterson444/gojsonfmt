@@ -14,47 +14,40 @@ import (
 	"strings"
 )
 
-// FormatJSONString formats a JSON string with Go source code like formatting.
+// FormatJSONString formats a JSON string with Go source code like formatting
+// rules.
 func FormatJSONString(data string) (string, error) {
-	output, err := FormatJSONReader(strings.NewReader(data))
+	output, err := readAndFormatJSON(strings.NewReader(data))
 	if err != nil {
 		return "", nil
 	}
-	formatted, err := io.ReadAll(output)
-	if err != nil {
-		return "", err
-	}
-	return string(formatted), nil
+	return output, nil
 }
 
 // FormatJSONBytes decodes the byte array as a JSON string and formats it with
-// Go source code like formatting.
+// Go source code like formatting rules.
 func FormatJSONBytes(data []byte) ([]byte, error) {
-	output, err := FormatJSONReader(bytes.NewReader(data))
+	output, err := readAndFormatJSON(bytes.NewReader(data))
 	if err != nil {
 		return nil, err
 	}
-	formatted, err := io.ReadAll(output)
-	if err != nil {
-		return nil, err
-	}
-	return formatted, nil
+	return []byte(output), nil
 }
 
-// FormatJSONReader reads JSON data from the reader and formats it with Go
-// source code like formatting.
-func FormatJSONReader(r io.Reader) (*strings.Reader, error) {
+// readAndFormatJSON reads JSON data from the reader and formats it with Go
+// source code like formatting rules.
+func readAndFormatJSON(r io.Reader) (string, error) {
 	dec := json.NewDecoder(r)
 	dec.UseNumber()
 
 	var buf strings.Builder
 	err := formatObject(dec, &buf, 0, false, false)
 	if err != nil && err != io.EOF {
-		return nil, err
+		return "", err
 	}
 	output := buf.String()
 	output = strings.TrimSpace(output)
-	return strings.NewReader(output), nil
+	return output, nil
 }
 
 func formatObject(dec *json.Decoder, buf *strings.Builder, indent int, inArray, inObject bool) error {
