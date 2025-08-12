@@ -29,10 +29,16 @@ Usage of gojsonfmt:
 
 ## Examples
 
+The following examples demonstrate the difference between `jq` formatting and 
+what `gojsonfmt` will produce. 
+
 ### Lists of Objects
 
-The following JSON document, formatted by `jq`, contains a single key, which
-holds a list of objects.
+Objects in a list will have their final `}` character on the same line as the
+first `{` character in the next object. The final `]` character of the list
+will follow right after the last closing `}` of the final object in the list.
+
+Original: 
 
 ```json
 {
@@ -49,7 +55,7 @@ holds a list of objects.
 }
 ```
 
-will be formatted into:
+Formatted:
 
 ```json
 {
@@ -65,7 +71,9 @@ will be formatted into:
 
 ### Lists of Lists
 
-Lists of lists, and lists of alternating types are handled as well:
+Lists of lists, and lists of alternating types are handled similarly.
+
+Original:
 
 ```json
 {
@@ -87,7 +95,7 @@ Lists of lists, and lists of alternating types are handled as well:
 }
 ```
 
-formatted:
+Formatted:
 
 ```json
 {
