@@ -41,7 +41,7 @@ func readAndFormatJSON(r io.Reader) (string, error) {
 	dec.UseNumber()
 
 	var buf strings.Builder
-	err := formatObject(dec, &buf, 0, false, false)
+	err := formatObject(dec, &buf, 0, false)
 	if err != nil && err != io.EOF {
 		return "", err
 	}
@@ -50,7 +50,7 @@ func readAndFormatJSON(r io.Reader) (string, error) {
 	return output, nil
 }
 
-func formatObject(dec *json.Decoder, buf *strings.Builder, indent int, inArray, inObject bool) error {
+func formatObject(dec *json.Decoder, buf *strings.Builder, indent int, inArray bool) error {
 	nextTokenIsValue := false
 	valueNeedsNewline := inArray
 	for {
@@ -76,7 +76,7 @@ func formatObject(dec *json.Decoder, buf *strings.Builder, indent int, inArray, 
 					}
 				} else {
 					buf.WriteString("\n")
-					if err := formatObject(dec, buf, indent+1, false, true); err != nil {
+					if err := formatObject(dec, buf, indent+1, false); err != nil {
 						return err
 					}
 					writeIndent(buf, indent)
@@ -114,7 +114,7 @@ func formatObject(dec *json.Decoder, buf *strings.Builder, indent int, inArray, 
 							buf.WriteString(", ")
 						}
 						// If not more, don't write.
-					} else if inObject {
+					} else {
 						if dec.More() {
 							buf.WriteString(",\n")
 						} else {
@@ -124,7 +124,7 @@ func formatObject(dec *json.Decoder, buf *strings.Builder, indent int, inArray, 
 					continue
 				}
 
-				if err := formatObject(dec, buf, indent, true, false); err != nil {
+				if err := formatObject(dec, buf, indent, true); err != nil {
 					return err
 				}
 				s := buf.String()
@@ -155,7 +155,7 @@ func formatObject(dec *json.Decoder, buf *strings.Builder, indent int, inArray, 
 				buf.WriteString("\n")
 				valueNeedsNewline = false
 			}
-			if inObject {
+			if !inArray {
 				if nextTokenIsValue {
 					fmt.Fprintf(buf, "%q", tok)
 					if dec.More() {
