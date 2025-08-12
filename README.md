@@ -4,7 +4,19 @@ This package provides a way to format JSON into in a Go-like way. Opening and
 closing braces will be compacted where possible, and indentation always uses
 tabs.
 
-## Examples:
+## Installation
+
+```bash
+go install github.com/chris-peterson444/gojsonfmt/cmd/gojsonfmt@latest
+```
+
+## Usage
+
+```bash
+go get github.com/chris-peterson444/gojsonfmt
+```
+
+## Examples
 
 ### Lists of Objects
 
