@@ -187,13 +187,21 @@ var conversionTests = []struct {
 			  "list-of-multiple-empty-object": [
 			    {},
 			    {}
-			  ]
+			  ],
+			 "object-with-multiple-empty-arrays": {
+				"foo": [],
+				"bar": []
+			}
 }`,
 	expected: `{
 	"list-of-single-empty-list": [[]],
 	"list-of-multiple-empty-lists": [[], [], []],
 	"list-of-empty-object": [{}],
-	"list-of-multiple-empty-object": [{}, {}]
+	"list-of-multiple-empty-object": [{}, {}],
+	"object-with-multiple-empty-arrays": {
+		"foo": [],
+		"bar": []
+	}
 }`,
 }, {
 	summary: "lists and objects of various completeness and nesting",
@@ -345,6 +353,7 @@ var conversionTests = []struct {
             },
             {},
             9,
+            {},
             [],
             10
           ]
@@ -375,7 +384,7 @@ var conversionTests = []struct {
 				"baz": 1
 			}, {},
 			9,
-			[],
+			{}, [],
 			10
 	]]]]]
 }`,
@@ -431,16 +440,16 @@ func TestFormatJSONString(t *testing.T) {
 	}
 }
 
-// func TestFormatJSONBytes(t *testing.T) {
-// 	for _, test := range conversionTests {
-// 		t.Run(test.summary, func(t *testing.T) {
-// 			generated, err := gojsonfmt.FormatJSONBytes([]byte(test.input))
-// 			if err != nil {
-// 				t.Fatalf("unexpected error: %v", err)
-// 			}
-// 			if string(generated) != test.expected {
-// 				t.Fatalf("expected:\n %s\nbut got:\n%s\n", test.expected, generated)
-// 			}
-// 		})
-// 	}
-// }
+func TestFormatJSONBytes(t *testing.T) {
+	for _, test := range conversionTests {
+		t.Run(test.summary, func(t *testing.T) {
+			generated, err := gojsonfmt.FormatJSONBytes([]byte(test.input))
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if string(generated) != test.expected {
+				t.Fatalf("expected:\n %s\nbut got:\n%s\n", test.expected, generated)
+			}
+		})
+	}
+}

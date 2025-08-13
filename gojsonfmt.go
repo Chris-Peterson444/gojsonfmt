@@ -61,7 +61,7 @@ func formatJSON(dec *json.Decoder, buf *strings.Builder, indent int) error {
 		switch tok {
 		case '{':
 			buf.WriteString("{\n")
-			err := formatObject(dec, buf, indent+1, false)
+			err := formatObject(dec, buf, indent+1)
 			if err != nil && err != io.EOF {
 				return err
 			}
@@ -120,7 +120,7 @@ func formatArray(dec *json.Decoder, buf *strings.Builder, indent int) (string, e
 					continue
 				}
 				buf.WriteString("{\n")
-				err := formatObject(dec, buf, currentIndent+1, false)
+				err := formatObject(dec, buf, currentIndent+1)
 				if err != nil {
 					return "", err
 				}
@@ -216,7 +216,7 @@ func formatArray(dec *json.Decoder, buf *strings.Builder, indent int) (string, e
 	}
 }
 
-func formatObject(dec *json.Decoder, buf *strings.Builder, indent int, inArray bool) error {
+func formatObject(dec *json.Decoder, buf *strings.Builder, indent int) error {
 	nextValueIsKey := true
 	for {
 		t, err := dec.Token()
@@ -250,23 +250,15 @@ func formatObject(dec *json.Decoder, buf *strings.Builder, indent int, inArray b
 					continue
 				}
 				buf.WriteString("{\n")
-				err := formatObject(dec, buf, indent+1, false)
+				err := formatObject(dec, buf, indent+1)
 				if err != nil {
 					return err
 				}
-				if inArray {
-					if dec.More() {
-						buf.WriteString("}, ")
-					} else {
-						buf.WriteString("}")
-					}
+				writeIndent(buf, indent)
+				if dec.More() {
+					buf.WriteString("},\n")
 				} else {
-					writeIndent(buf, indent)
-					if dec.More() {
-						buf.WriteString("},\n")
-					} else {
-						buf.WriteString("}\n")
-					}
+					buf.WriteString("}\n")
 				}
 			case '[':
 				if nextValueIsKey {
