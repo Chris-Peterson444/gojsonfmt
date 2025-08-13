@@ -157,10 +157,16 @@ func formatArray(dec *json.Decoder, buf *strings.Builder, indent int) (string, e
 					return "", err
 				}
 				if dec.More() {
+					// If the last item in the array was an
+					// empty list or object, the buffer
+					// will still be on that line. If not,
+					// then we want to align the closing
+					// braces to the regular item indent.
 					lastChar := last(buf)
 					if lastChar != ']' && lastChar != '}' {
 						writeIndent(buf, currentIndent)
 					}
+
 					buf.WriteString(innerClose)
 					buf.WriteString(",")
 				} else {
