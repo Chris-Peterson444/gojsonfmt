@@ -120,7 +120,7 @@ func formatArray(dec *json.Decoder, buf *strings.Builder, indent int) (string, e
 				if err != nil {
 					return "", err
 				}
-				writeIndent(buf, indent)
+				writeIndent(buf, currentIndent)
 				if dec.More() {
 					buf.WriteString("},")
 				} else {

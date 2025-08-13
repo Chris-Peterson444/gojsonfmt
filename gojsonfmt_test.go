@@ -424,6 +424,53 @@ var conversionTests = []struct {
 		6
 	]
 }`,
+}, {
+	summary: "list that starts with object, then simple values",
+	input: `{
+		  "foo": [
+		    {
+		      "bar": 1
+		    },
+		    2,
+		    3
+		  ]
+		}`,
+	expected: `{
+	"foo": [{
+		"bar": 1
+	},
+	2,
+	3
+	]
+}`,
+}, {
+	summary: "list that starts with simple values, then objects",
+	input: `{
+		  "foo": [
+		    1,
+		    {
+		      "bar": 2
+		    },
+		    3,
+		    {
+		      "bar": 4
+		    },
+		    5
+		  ]
+		}`,
+	expected: `{
+	"foo": [
+		1,
+		{
+			"bar": 2
+		},
+		3,
+		{
+			"bar": 4
+		},
+		5
+	]
+}`,
 }}
 
 func TestFormatJSONString(t *testing.T) {
