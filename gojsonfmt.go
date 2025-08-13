@@ -81,6 +81,7 @@ func formatArray(dec *json.Decoder, buf *strings.Builder, indent int) (string, e
 	startedWithDelim := false
 	lastItemWasObjectOrArray := true
 	closing := "]"
+	isFirstItem := true
 	for {
 		t, err := dec.Token()
 		if err != nil {
@@ -90,16 +91,11 @@ func formatArray(dec *json.Decoder, buf *strings.Builder, indent int) (string, e
 		case json.Delim:
 			switch tok {
 			case '{':
-				startedWithDelim = true
-				if lastItemWasObjectOrArray {
-					lastChar := last(buf)
-					if lastChar != '[' && lastChar != '{' {
-						buf.WriteString(" ")
-					}
-				} else {
-					// buf.WriteString("\n")
-					// writeIndent(buf, indent)
+				if lastItemWasObjectOrArray && !isFirstItem {
+					buf.WriteString(" ")
 				}
+				isFirstItem = false
+				startedWithDelim = true
 				lastItemWasObjectOrArray = true
 				// TODO: Handle one-liners
 				if !dec.More() {
@@ -132,17 +128,12 @@ func formatArray(dec *json.Decoder, buf *strings.Builder, indent int) (string, e
 				}
 			case '[':
 				startedWithDelim = true
-				if lastItemWasObjectOrArray {
-					lastChar := last(buf)
-					if lastChar != '[' && lastChar != '{' {
-						buf.WriteString(" ")
-					}
-				} else {
-					// buf.WriteString("\n")
-					// writeIndent(buf, indent)
+				if lastItemWasObjectOrArray && !isFirstItem {
+					buf.WriteString(" ")
 				}
+				isFirstItem = false
 				lastItemWasObjectOrArray = true
-				// Handle empty lists.
+				// Make sure empty JSON arrays are one-liners.
 				if !dec.More() {
 					t, err = dec.Token()
 					tok, ok := t.(json.Delim)
@@ -265,6 +256,7 @@ func formatObject(dec *json.Decoder, buf *strings.Builder, indent int) error {
 					return fmt.Errorf("expected string key but got: [")
 				}
 				nextValueIsKey = true
+				// Make sure empty JSON arrays are one-liners.
 				if !dec.More() {
 					t, err = dec.Token()
 					tok, ok := t.(json.Delim)
@@ -288,17 +280,15 @@ func formatObject(dec *json.Decoder, buf *strings.Builder, indent int) error {
 					return err
 				}
 
-				// The last value in an array won't print a new
-				// line by default. Line it up with the key
-				// here.
-				// buf.WriteString("\n")
-				// writeIndent(buf, indent)
+				// If the last item in the array was an empty
+				// list or object, the buffer will still be
+				// on that line. If not, then we want to
+				// align the closing braces to the key with
+				// an indent here.
 				lastChar := last(buf)
 				if lastChar != ']' && lastChar != '}' {
 					writeIndent(buf, indent)
 				}
-
-				// writeIndent(buf, indent)
 				buf.WriteString(innerClose)
 
 				if dec.More() {
