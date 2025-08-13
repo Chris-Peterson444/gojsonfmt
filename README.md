@@ -40,9 +40,9 @@ Objects in a list will have their final `}` character on the same line as the
 first `{` character in the next object. The final `]` character of the list
 will follow right after the last closing `}` of the final object in the list.
 
-Original: 
+jq: 
 
-```json
+```
 {
   "foo": [
     {
@@ -57,9 +57,9 @@ Original:
 }
 ```
 
-Formatted:
+gojsonfmt:
 
-```json
+```
 {
 	"foo": [{
 		"bar": 1,
@@ -75,9 +75,9 @@ Formatted:
 
 Lists of lists, and lists of alternating types are handled similarly.
 
-Original:
+jq:
 
-```json
+```
 {
   "foo": [
     [
@@ -97,9 +97,9 @@ Original:
 }
 ```
 
-Formatted:
+gojsonfmt:
 
-```json
+```
 {
 	"foo": [[
 		1,
@@ -118,9 +118,9 @@ Formatted:
 Objects with no attributes and empty lists will be formatted in-line. Lists
 with empty objects will attempt to compact as well.
 
-Original:
+jq:
 
-```json
+```
 {
   "foo": {},
   "bar": [
@@ -134,9 +134,9 @@ Original:
 }
 ```
 
-Formatted:
+gojsonfmt:
 
-```json
+```
 {
 	"foo": {},
 	"bar": [[{}]],
