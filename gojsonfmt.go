@@ -19,7 +19,7 @@ import (
 func FormatJSONString(data string) (string, error) {
 	output, err := readAndFormatJSON(strings.NewReader(data))
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 	return output, nil
 }
@@ -41,7 +41,8 @@ func readAndFormatJSON(r io.Reader) (string, error) {
 	dec.UseNumber()
 
 	var buf strings.Builder
-	err := formatObject(dec, &buf, 0, false)
+	// err := formatObject(dec, &buf, 0, false)
+	err := formatJSON(dec, &buf, 0)
 	if err != nil && err != io.EOF {
 		return "", err
 	}
@@ -50,9 +51,173 @@ func readAndFormatJSON(r io.Reader) (string, error) {
 	return output, nil
 }
 
+func formatJSON(dec *json.Decoder, buf *strings.Builder, indent int) error {
+	t, err := dec.Token()
+	if err != nil {
+		return err
+	}
+	switch tok := t.(type) {
+	case json.Delim:
+		switch tok {
+		case '{':
+			buf.WriteString("{\n")
+			err := formatObject(dec, buf, indent+1, false)
+			if err != nil && err != io.EOF {
+				return err
+			}
+			buf.WriteString("}")
+		default:
+			return fmt.Errorf("expected '{' at start of document but got: %v", tok)
+		}
+	default:
+		return fmt.Errorf("expected '{' at start of document but got: %v", t)
+	}
+
+	return nil
+}
+
+func formatArray(dec *json.Decoder, buf *strings.Builder, indent int) (string, error) {
+	currentIndent := indent
+	startedWithDelim := false
+	lastItemWasObjectOrArray := true
+	closing := "]"
+	for {
+		t, err := dec.Token()
+		if err != nil {
+			return "", err
+		}
+		switch tok := t.(type) {
+		case json.Delim:
+			switch tok {
+			case '{':
+				startedWithDelim = true
+				if lastItemWasObjectOrArray {
+					lastChar := last(buf)
+					if lastChar != '[' && lastChar != '{' {
+						buf.WriteString(" ")
+					}
+				} else {
+					// buf.WriteString("\n")
+					// writeIndent(buf, indent)
+				}
+				lastItemWasObjectOrArray = true
+				// TODO: Handle one-liners
+				if !dec.More() {
+					t, err = dec.Token()
+					tok, ok := t.(json.Delim)
+					if !ok {
+						return "", fmt.Errorf("expected '}' but got %T", t)
+					}
+					if tok != '}' {
+						return "", fmt.Errorf("expected '} but got %q", tok)
+					}
+					buf.WriteString("{}")
+					if dec.More() {
+						buf.WriteString(",")
+					} else {
+						buf.WriteString("")
+					}
+					continue
+				}
+				buf.WriteString("{\n")
+				err := formatObject(dec, buf, currentIndent+1, false)
+				if err != nil {
+					return "", err
+				}
+				writeIndent(buf, indent)
+				if dec.More() {
+					buf.WriteString("},")
+				} else {
+					buf.WriteString("}")
+				}
+			case '[':
+				startedWithDelim = true
+				if lastItemWasObjectOrArray {
+					lastChar := last(buf)
+					if lastChar != '[' && lastChar != '{' {
+						buf.WriteString(" ")
+					}
+				} else {
+					// buf.WriteString("\n")
+					// writeIndent(buf, indent)
+				}
+				lastItemWasObjectOrArray = true
+				// Handle empty lists.
+				if !dec.More() {
+					t, err = dec.Token()
+					tok, ok := t.(json.Delim)
+					if !ok {
+						return "", fmt.Errorf("expected ']' but got %T", t)
+					}
+					if tok != ']' {
+						return "", fmt.Errorf("expected ']' but got %q", tok)
+					}
+					buf.WriteString("[]")
+					if dec.More() {
+						buf.WriteString(",")
+					} else {
+						buf.WriteString("")
+					}
+					continue
+				}
+				buf.WriteString("[")
+				innerClose, err := formatArray(dec, buf, currentIndent)
+				if err != nil {
+					return "", err
+				}
+				if dec.More() {
+					lastChar := last(buf)
+					if lastChar != ']' && lastChar != '}' {
+						writeIndent(buf, currentIndent)
+					}
+					buf.WriteString(innerClose)
+					buf.WriteString(",")
+				} else {
+					closing = innerClose + "]"
+				}
+			case '}':
+				return "", fmt.Errorf("unexpected '}' in array")
+			case ']':
+				return closing, nil
+			}
+		case json.Number, bool, string, nil:
+			if !startedWithDelim {
+				currentIndent += 1
+				startedWithDelim = true
+				buf.WriteString("\n")
+				writeIndent(buf, currentIndent)
+			} else if lastItemWasObjectOrArray {
+				buf.WriteString("\n")
+				writeIndent(buf, currentIndent)
+			}
+			lastItemWasObjectOrArray = false
+			var out string
+			switch tok := t.(type) {
+			case json.Number:
+				out = fmt.Sprintf("%s", tok.String())
+			case bool:
+				out = fmt.Sprintf("%t", tok)
+			case string:
+				out = fmt.Sprintf("%q", tok)
+			case nil:
+				out = "null"
+			}
+			fmt.Fprintf(buf, "%s", out)
+			if dec.More() {
+				buf.WriteString(",\n")
+				writeIndent(buf, currentIndent)
+			} else {
+				buf.WriteString("\n")
+			}
+		default:
+			return "", fmt.Errorf("cannot parse unknown token type: %T", tok)
+
+		}
+	}
+}
+
 func formatObject(dec *json.Decoder, buf *strings.Builder, indent int, inArray bool) error {
-	nextTokenIsValue := false
-	valueNeedsNewline := inArray
+	nextValueIsKey := true
 	for {
 		t, err := dec.Token()
 		if err != nil {
@@ -62,8 +227,10 @@ func formatObject(dec *json.Decoder, buf *strings.Builder, indent int, inArray b
 		case json.Delim:
 			switch tok {
 			case '{':
-				nextTokenIsValue = false
-				buf.WriteString("{")
+				if nextValueIsKey {
+					return fmt.Errorf("expected string key but got: {")
+				}
+				nextValueIsKey = true
 				// Make sure empty JSON objects are one-liners.
 				if !dec.More() {
 					t, err = dec.Token()
@@ -74,12 +241,18 @@ func formatObject(dec *json.Decoder, buf *strings.Builder, indent int, inArray b
 					if tok != '}' {
 						return fmt.Errorf("expected '} but got %q", tok)
 					}
-				} else {
-					buf.WriteString("\n")
-					if err := formatObject(dec, buf, indent+1, false); err != nil {
-						return err
+					buf.WriteString("{}")
+					if dec.More() {
+						buf.WriteString(",\n")
+					} else {
+						buf.WriteString("\n")
 					}
-					writeIndent(buf, indent)
+					continue
+				}
+				buf.WriteString("{\n")
+				err := formatObject(dec, buf, indent+1, false)
+				if err != nil {
+					return err
 				}
 				if inArray {
 					if dec.More() {
@@ -88,6 +261,7 @@ func formatObject(dec *json.Decoder, buf *strings.Builder, indent int, inArray b
 						buf.WriteString("}")
 					}
 				} else {
+					writeIndent(buf, indent)
 					if dec.More() {
 						buf.WriteString("},\n")
 					} else {
@@ -95,10 +269,10 @@ func formatObject(dec *json.Decoder, buf *strings.Builder, indent int, inArray b
 					}
 				}
 			case '[':
-				nextTokenIsValue = false
-				buf.WriteString("[")
-
-				// Make sure empty JSON lists are one-liners.
+				if nextValueIsKey {
+					return fmt.Errorf("expected string key but got: [")
+				}
+				nextValueIsKey = true
 				if !dec.More() {
 					t, err = dec.Token()
 					tok, ok := t.(json.Delim)
@@ -106,102 +280,86 @@ func formatObject(dec *json.Decoder, buf *strings.Builder, indent int, inArray b
 						return fmt.Errorf("expected ']' but got %T", t)
 					}
 					if tok != ']' {
-						return fmt.Errorf("expected '] but got %q", tok)
+						return fmt.Errorf("expected ']' but got %q", tok)
 					}
-					buf.WriteString("]")
-					if inArray {
-						if dec.More() {
-							buf.WriteString(", ")
-						}
-						// If not more, don't write.
-					} else {
-						if dec.More() {
-							buf.WriteString(",\n")
-						} else {
-							buf.WriteString("\n")
-						}
-					}
-					continue
-				}
-
-				if err := formatObject(dec, buf, indent, true); err != nil {
-					return err
-				}
-				s := buf.String()
-				lastChar := s[len(s)-1]
-				if lastChar != '}' && lastChar != ']' {
-					writeIndent(buf, indent)
-				}
-				if inArray {
-					if dec.More() {
-						buf.WriteString("], ")
-					} else {
-						buf.WriteString("]")
-					}
-				} else {
-					if dec.More() {
-						buf.WriteString("],\n")
-					} else {
-						buf.WriteString("]\n")
-					}
-				}
-			case '}':
-				return nil
-			case ']':
-				return nil
-			}
-		case string:
-			if valueNeedsNewline {
-				buf.WriteString("\n")
-				valueNeedsNewline = false
-			}
-			if !inArray {
-				if nextTokenIsValue {
-					fmt.Fprintf(buf, "%q", tok)
+					buf.WriteString("[]")
 					if dec.More() {
 						buf.WriteString(",\n")
 					} else {
 						buf.WriteString("\n")
 					}
-					nextTokenIsValue = false
+					continue
+				}
+				buf.WriteString("[")
+				innerClose, err := formatArray(dec, buf, indent)
+				if err != nil {
+					return err
+				}
+
+				// The last value in an array won't print a new
+				// line by default. Line it up with the key
+				// here.
+				// buf.WriteString("\n")
+				// writeIndent(buf, indent)
+				lastChar := last(buf)
+				if lastChar != ']' && lastChar != '}' {
+					writeIndent(buf, indent)
+				}
+
+				// writeIndent(buf, indent)
+				buf.WriteString(innerClose)
+
+				if dec.More() {
+					buf.WriteString(",\n")
 				} else {
+					buf.WriteString("\n")
+				}
+			case '}':
+				return nil
+			case ']':
+				return fmt.Errorf("unexpected ']' in object")
+			}
+		case string, json.Number, bool, nil:
+			if nextValueIsKey {
+				switch tok := t.(type) {
+				case string:
+					nextValueIsKey = false
 					writeIndent(buf, indent)
 					fmt.Fprintf(buf, "%q: ", tok)
-					nextTokenIsValue = true
+				default:
+					return fmt.Errorf("expected string key but got: %T", tok)
 				}
 			} else {
-				writeIndent(buf, indent+1)
-				fmt.Fprintf(buf, "%q", tok)
+				nextValueIsKey = true
+				var out string
+				switch tok := t.(type) {
+				case json.Number:
+					out = fmt.Sprintf("%s", tok.String())
+				case bool:
+					out = fmt.Sprintf("%t", tok)
+				case string:
+					out = fmt.Sprintf("%q", tok)
+				case nil:
+					out = "null"
+				}
+
+				fmt.Fprintf(buf, "%s", out)
 				if dec.More() {
 					buf.WriteString(",\n")
 				} else {
 					buf.WriteString("\n")
 				}
 			}
-		default: // These are always value types.
-			if valueNeedsNewline {
-				buf.WriteString("\n")
-				valueNeedsNewline = false
-			}
-			if inArray {
-				writeIndent(buf, indent+1)
-			}
-			switch tok := t.(type) {
-			case json.Number:
-				fmt.Fprintf(buf, "%s", tok.String())
-			case bool:
-				fmt.Fprintf(buf, "%t", tok)
-			case nil:
-				buf.WriteString("null")
-			}
-			if dec.More() {
-				buf.WriteString(",\n")
-			} else {
-				buf.WriteString("\n")
-			}
-			nextTokenIsValue = false
+		default:
+			return fmt.Errorf("cannot parse unknown token type: %T", tok)
+
 		}
 	}
+}
+
+func last(buf *strings.Builder) byte {
+	s := buf.String()
+	return s[len(s)-1]
 }
 
 func writeIndent(buf *strings.Builder, n int) {
