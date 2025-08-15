@@ -56,13 +56,33 @@ func getVersion() string {
 }
 
 func customUsage() {
-	fmt.Printf("Usage: %s [OPTIONS] argument ...\n", os.Args[0])
+	summary := `
+Format JSON in a Go-like way. Opening and closing braces will be compacted where
+possible, and indentation always uses tabs. 
+
+By default it will read in raw JSON from stdin in, but you can pass --file
+to read the text in a specified file.
+
+Example:
+
+	$ echo '{"foo": [{"bar": 1}, {"bar": 2}]}' | gojsonfmt
+	{
+		"foo": [{
+			"bar": 1
+		}, {
+			"bar": 2
+		}]
+	}
+`
+
+	fmt.Printf("Usage: %s [JSON_TEXT]\n", os.Args[0])
+	fmt.Printf("       %s --file <file-path>", os.Args[0])
+	fmt.Println(summary)
 	flag.PrintDefaults()
 }
 
 func main() {
 	flag.Usage = customUsage
-	stdinFlag := flag.Bool("stdin", true, "Read raw JSON from stdin and format it")
 	fileFlag := flag.String("file", "", "Path to JSON data to format")
 	versionFlag := flag.Bool("version", false, "show version information")
 
@@ -74,12 +94,14 @@ func main() {
 		return
 	}
 
-	if *stdinFlag && *fileFlag != "" {
-		fmt.Fprintln(os.Stderr, "Error: --stdin and --file cannot be used together")
-		os.Exit(1)
-	}
-
-	if *stdinFlag {
+	if *fileFlag != "" {
+		data, err := os.ReadFile(*fileFlag)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "could not read file: %v\n", err)
+		}
+		formatJSON(data)
+		return
+	} else {
 		data, err := io.ReadAll(bufio.NewReader(os.Stdin))
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "could not read stdin: %v\n", err)
@@ -88,18 +110,6 @@ func main() {
 		formatJSON(data)
 		return
 	}
-
-	if *fileFlag != "" {
-		data, err := os.ReadFile(*fileFlag)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "could not read file: %v\n", err)
-		}
-		formatJSON(data)
-		return
-	}
-
-	fmt.Fprintln(os.Stderr, "error: You must specify either --stdin or --file")
-	os.Exit(1)
 }
 
 func formatJSON(data []byte) {
