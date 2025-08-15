@@ -27,11 +27,29 @@ go install github.com/chris-peterson444/gojsonfmt/cmd/gojsonfmt@latest
 
 ```bash
 $ gojsonfmt --help
-Usage of gojsonfmt:
+Usage: gojsonfmt [JSON_TEXT]
+       gojsonfmt --file <file-path>
+Format JSON in a Go-like way. Opening and closing braces will be compacted where
+possible, and indentation always uses tabs.
+
+By default it will read in raw JSON from stdin in, but you can pass --file
+to read the text in a specified file.
+
+Example:
+
+        $ echo '{"foo": [{"bar": 1}, {"bar": 2}]}' | gojsonfmt
+        {
+                "foo": [{
+                        "bar": 1
+                }, {
+                        "bar": 2
+                }]
+        }
+
   -file string
         Path to JSON data to format
-  -stdin
-        Read raw JSON from stdin and format it
+  -version
+        show version information
 ```
 
 ## Examples
