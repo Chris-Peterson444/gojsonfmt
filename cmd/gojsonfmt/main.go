@@ -10,14 +10,55 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime/debug"
 
 	"github.com/chris-peterson444/gojsonfmt"
 )
 
+// Update for releases.
+const VERSION = "devel"
+
+func getVersion() string {
+	// Get exact commit version if possible.
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return VERSION
+	}
+	var version, modified string
+	for _, setting := range info.Settings {
+		switch setting.Key {
+		case "vcs.revision":
+			version = setting.Value
+		case "vcs.modified":
+			modified = setting.Value
+		}
+	}
+
+	if modified == "true" {
+		version += "+dirty"
+	}
+	// return version
+	return VERSION + "+" + version
+}
+
+func customUsage() {
+	fmt.Printf("Usage: %s [OPTIONS] argument ...\n", os.Args[0])
+	flag.PrintDefaults()
+}
+
 func main() {
-	stdinFlag := flag.Bool("stdin", false, "Read raw JSON from stdin and format it")
+	flag.Usage = customUsage
+	stdinFlag := flag.Bool("stdin", true, "Read raw JSON from stdin and format it")
 	fileFlag := flag.String("file", "", "Path to JSON data to format")
+	versionFlag := flag.Bool("version", false, "show version information")
+
 	flag.Parse()
+
+	if *versionFlag {
+		version := getVersion()
+		fmt.Printf("version: %q\n", version)
+		return
+	}
 
 	if *stdinFlag && *fileFlag != "" {
 		fmt.Fprintln(os.Stderr, "Error: --stdin and --file cannot be used together")
