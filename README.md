@@ -25,7 +25,7 @@ go get github.com/chris-peterson444/gojsonfmt
 go install github.com/chris-peterson444/gojsonfmt/cmd/gojsonfmt@latest
 ```
 
-```bash
+```
 $ gojsonfmt --help
 Usage: gojsonfmt [JSON_TEXT]
        gojsonfmt --file <file-path>
