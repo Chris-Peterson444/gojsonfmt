@@ -27,7 +27,7 @@ import (
 )
 
 // Update for releases.
-const VERSION = "v0.2.0"
+const VERSION = "devel"
 
 func getVersion() string {
 	// Get exact commit version if possible.
