@@ -6,7 +6,12 @@ This package provides a way to format JSON into in a Go-like way. Opening and
 closing braces will be compacted where possible, and indentation always uses
 tabs.
 
-## Usage
+## Disclaimer
+
+This is not a Canonical product. Just a program written by a Canonical employee
+on company time. Assume no support, warranty, etc.
+
+## Installation
 
 ### As a Package
 
@@ -14,7 +19,7 @@ tabs.
 go get github.com/chris-peterson444/gojsonfmt
 ```
 
-### Install the binary
+### Get the binary
 
 ```bash
 go install github.com/chris-peterson444/gojsonfmt/cmd/gojsonfmt@latest
