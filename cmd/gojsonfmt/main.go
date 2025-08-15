@@ -35,6 +35,9 @@ func getVersion() string {
 	if !ok {
 		return VERSION
 	}
+	if VERSION != "devel" {
+		return VERSION
+	}
 	var version, modified string
 	for _, setting := range info.Settings {
 		switch setting.Key {
